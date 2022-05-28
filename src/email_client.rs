@@ -1,17 +1,21 @@
+use crate::domain::SubscriberEmail;
 use reqwest::Client;
 use secrecy::{ExposeSecret, Secret};
-use crate::domain::SubscriberEmail;
 
 #[derive(Clone)]
 pub struct EmailClient {
     http_client: Client,
     base_url: String,
     sender: SubscriberEmail,
-    authorization_token: Secret<String>
+    authorization_token: Secret<String>,
 }
 
 impl EmailClient {
-    pub fn new(base_url: String, sender: SubscriberEmail, authorization_token: Secret<String>) -> Self {
+    pub fn new(
+        base_url: String,
+        sender: SubscriberEmail,
+        authorization_token: Secret<String>,
+    ) -> Self {
         Self {
             http_client: Client::new(),
             base_url,
@@ -25,7 +29,7 @@ impl EmailClient {
         recipient: SubscriberEmail,
         subject: &str,
         html_content: &str,
-        text_content: &str
+        text_content: &str,
     ) -> Result<(), reqwest::Error> {
         let url = format!("{}/email", self.base_url);
         let request_body = SendEmailRequest {
@@ -35,9 +39,13 @@ impl EmailClient {
             html_body: html_content.to_owned(),
             text_body: text_content.to_owned(),
         };
-        let _builder = self.http_client
+        let _builder = self
+            .http_client
             .post(&url)
-            .header("X-Postmark-Server-Token", self.authorization_token.expose_secret())
+            .header(
+                "X-Postmark-Server-Token",
+                self.authorization_token.expose_secret(),
+            )
             .json(&request_body)
             .send()
             .await?;
@@ -56,15 +64,15 @@ struct SendEmailRequest {
 
 #[cfg(test)]
 mod tests {
-    use fake::{Fake, Faker};
-    use fake::faker::internet::en::SafeEmail;
-    use fake::faker::lorem::en::Sentence;
-    use fake::faker::lorem::en::Paragraph;
-    use secrecy::Secret;
-    use wiremock::{Mock, MockServer, ResponseTemplate};
-    use wiremock::matchers::any;
     use crate::domain::SubscriberEmail;
     use crate::email_client::EmailClient;
+    use fake::faker::internet::en::SafeEmail;
+    use fake::faker::lorem::en::Paragraph;
+    use fake::faker::lorem::en::Sentence;
+    use fake::{Fake, Faker};
+    use secrecy::Secret;
+    use wiremock::matchers::any;
+    use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[tokio::test]
     async fn send_email_fires_a_request_to_base_url() {
